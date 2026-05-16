@@ -1,7 +1,9 @@
 const fs = require("fs");
 const pdfParse = require("pdf-parse");
+const mammoth = require("mammoth");
+const XLSX = require("xlsx");
 
-exports.uploadPDF = async (req, res) => {
+exports.uploadFile = async (req, res) => {
   try {
     const file = req.file;
     if (!file) {
@@ -11,8 +13,29 @@ exports.uploadPDF = async (req, res) => {
       });
     }
     const dataBuffer = fs.readFileSync(file.path);
-    const pdfData = await pdfParse(dataBuffer);
-    const extractedText = pdfData.text;
+    let extractedText = "";
+    if (file.mimetype === "application/pdf") {
+      const pdfData = await pdfParse(dataBuffer);
+      extractedText = pdfData.text;
+    }
+    if (file.mimetype === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
+      const result = await mammoth.extractRawText({buffer: dataBuffer,});
+      extractedText = result.value;
+    }
+    if (file.mimetype === "application/vnd.ms-excel" || file.mimetype === "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet") {
+      const workbook = XLSX.readFile(file.path);
+      workbook.SheetNames.forEach(
+        (sheet) => {
+          const sheetData =
+            XLSX.utils.sheet_to_json(
+              workbook.Sheets[sheet],
+              { header: 1 }
+            );
+          extractedText +=
+            JSON.stringify(sheetData);
+        }
+      );
+    }
     res.status(200).json({
       success: true,
       text: extractedText,
