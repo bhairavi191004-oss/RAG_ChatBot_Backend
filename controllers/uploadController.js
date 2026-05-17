@@ -14,15 +14,18 @@ exports.uploadFile = async (req, res) => {
     }
     const dataBuffer = fs.readFileSync(file.path);
     let extractedText = "";
+    //pdf
     if (file.mimetype === "application/pdf") {
       const pdfData = await pdfParse(dataBuffer);
       extractedText = pdfData.text;
     }
-    if (file.mimetype === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
+    //docx
+    else if (file.mimetype === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
       const result = await mammoth.extractRawText({buffer: dataBuffer,});
       extractedText = result.value;
     }
-    if (file.mimetype === "application/vnd.ms-excel" || file.mimetype === "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet") {
+    //excel
+    else if (file.mimetype === "application/vnd.ms-excel" || file.mimetype === "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet") {
       const workbook = XLSX.readFile(file.path);
       workbook.SheetNames.forEach(
         (sheet) => {
@@ -36,6 +39,8 @@ exports.uploadFile = async (req, res) => {
         }
       );
     }
+    console.log(extractedText);
+    
     res.status(200).json({
       success: true,
       text: extractedText,
