@@ -12,7 +12,9 @@ app.use(cors());
 app.use(express.json());
 
 const uploadRoutes = require("./routes/uploadRoutes");
+const queryRoutes = require("./routes/queryRoutes");
 app.use("/api/upload",uploadRoutes);
+app.use("/api/query", queryRoutes);
 
 const PORT = 5000;
 
